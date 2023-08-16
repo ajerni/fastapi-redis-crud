@@ -13,6 +13,7 @@ r = redis.Redis(
     host="redis-10522.c293.eu-central-1-1.ec2.cloud.redislabs.com",
     port=10522,
     password=os.getenv("redis_key"),
+    decode_responses=True
 )
 
 blogs = {
@@ -26,9 +27,44 @@ users = {"name": "users", "8": "Jamie", "9": "Roman"}
 
 r.set("blog_key", json.dumps(blogs))
 r.set("users_key", json.dumps(users))
-r.set("gugus", "guguseli")
+r.set("gugus", "guguseli jattutuuuu")
 
-print(r.get("blog_key"))
+#print(r.get("users_key"))
+
+r.hset('userset:1', mapping={
+    'name': 'John',
+    "surname": 'Smith',
+    "company": 'Redis',
+    "age": 29
+})
+
+r.hset('blogset:1', mapping=blogs)
+
+print(r.hgetall('userset:1'))
+
+# delete keys
+for key in r.keys("blog*"):
+    # delete the key
+    r.delete(key)
+
+# print all key, value pairs
+for key in r.keys("*"):
+    type = r.type(key)
+    if type == "string":
+        val = r.get(key)
+        print(f"Key: {key} -> Value: {val}")
+    if type == "hash":
+        vals = r.hgetall(key)
+        print(f"Key: {key} -> Value: {vals}")
+    if type == "zset":
+        vals = r.zrange(key, 0, -1)
+        print(f"Key: {key} -> Value: {vals}")
+    if type == "list":
+        vals = r.lrange(key, 0, -1)
+        print(f"Key: {key} -> Value: {vals}")
+    if type == "set":
+        vals = r. smembers(key)
+        print(f"Key: {key} -> Value: {vals}")
 
 app = FastAPI(title="FastAPI CURD on Redis")
 
