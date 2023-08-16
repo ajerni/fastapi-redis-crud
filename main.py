@@ -14,7 +14,7 @@ r = redis.Redis(
     decode_responses=True
 )
 
-# print all key, value pairs
+# get all key, value pairs
 def getallpairs():
     pairs = []
     for key in r.keys("*"):
@@ -37,7 +37,7 @@ def getallpairs():
     print(pairs)
     return {"messages": pairs}
 
-# print all key, value pairs (startswith)
+# get all key, value pairs (startswith)
 def getallpairs_starswith(key: str):
     keys = r.keys(f"{key}*")
     if not keys:
@@ -110,12 +110,12 @@ async def read_one(key: str):
             "error": True
         }, 500
 
-# Get all key, value pairs
+# Read all key, value pairs
 @app.get("/read_all", tags=["READ"])
 def read_all(allpairs: Dict = Depends(getallpairs)):
     return allpairs
 
-# Get all that start with...
+# Read all key, value pais that start with
 @app.get("/read_all_startwith", tags=["READ"])
 def read_all_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
     return allpairs_startwith
@@ -153,7 +153,7 @@ def delete(key: str):
     
     return {"message": "Record deleted successfully"}
 
-# Delete keys that starts with certain text
+# Delete keys that starts with
 @app.delete("/delete_startswith", tags=["DELETE"])
 def delete_startswith(key: str):
     keys = r.keys(f"{key}*")
