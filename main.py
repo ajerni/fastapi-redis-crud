@@ -1,12 +1,9 @@
 from typing import Any
 from fastapi import FastAPI, Depends, HTTPException, status
-
 import redis
 import json
-
 from dotenv import load_dotenv
 import os
-
 load_dotenv()
 
 r = redis.Redis(
@@ -73,20 +70,69 @@ class GetObjectOr404:
         self.model = model
 
     def __call__(self, id: str):
+        
+        
+        
         obj = self.model.get(id)
+        
+        
+        
         if not obj:
             raise HTTPException(
-                detail=f"Object with id {id} does not exist in model {self.model.get('name')}",
+                detail=f"Object with id {id} does not exist",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         return obj
 
 blog_dependency = GetObjectOr404(blogs)
-@app.get("/blog/{id}")
+@app.get("/blog/{id}", tags=["Blog"])
 def get_blog(blog_name: str = Depends(blog_dependency)):
     return blog_name
 
 user_dependency = GetObjectOr404(users)
-@app.get("/user/{id}")
+@app.get("/user/{id}", tags=["Blog"])
 def get_user(user_name: str = Depends(user_dependency)):
     return user_name
+
+# Create route
+@app.post("/create", tags=["CRUD"])
+def create(key: str, value: str):
+    # Set the key-value pair in Redis
+    r.set(key, value)
+    
+    return {"message": "Record created successfully"}
+
+# Read route
+@app.get("/read", tags=["CRUD"])
+def read(key: str):
+    # Get the value for the specified key from Redis
+    value = r.get(key)
+    
+    if value is None:
+        return {"message": "Key not found"}
+    
+    return {"message": "Record read successfully", "value": value}
+
+# Update route
+@app.put("/update", tags=["CRUD"])
+def update(key: str, value: str):
+    # Check if the key exists in Redis
+    if not r.exists(key):
+        return {"message": "Key not found"}
+    
+    # Update the value for the specified key in Redis
+    r.set(key, value)
+    
+    return {"message": "Record updated successfully"}
+
+# Delete route
+@app.delete("/delete", tags=["CRUD"])
+def delete(key: str):
+    # Check if the key exists in Redis
+    if not r.exists(key):
+        return {"message": "Key not found"}
+    
+    # Delete the key-value pair from Redis
+    r.delete(key)
+    
+    return {"message": "Record deleted successfully"}
