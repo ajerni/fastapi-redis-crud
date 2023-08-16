@@ -14,39 +14,6 @@ r = redis.Redis(
     decode_responses=True
 )
 
-blogs = {
-    "name": "blogs",
-    "1": "1. FastApi Prerequistiee",
-    "2": "2. Building APIs with FastAPI",
-    "3": "3. Background Tasks - Celery x FastAPI",
-}
-
-users = {"name": "users", "8": "Jamie", "9": "Roman"}
-
-r.set("blog_key", json.dumps(blogs))
-r.set("users_key", json.dumps(users))
-r.set("gugus", "guguseli jattutuuuu")
-
-#print(r.get("users_key"))
-
-r.hset('userset:1', mapping={
-    'name': 'John',
-    "surname": 'Smith',
-    "company": 'Redis',
-    "age": 29
-})
-
-r.hset('blogset:1', mapping=blogs)
-
-#print(r.hgetall('userset:1'))
-
-# delete keys
-# def delete_startswith(key: str):
-#     for key in r.keys("blog*"):
-#         # delete the key
-#         r.delete(key)
-    
-
 # print all key, value pairs
 def getallpairs():
     pairs = []
@@ -98,28 +65,6 @@ def getallpairs_starswith(key: str):
 
 app = FastAPI(title="FastAPI CURD on Redis")
 
-class GetObjectOr404:
-    def __init__(self, model) -> None:
-        self.model = model
-    def __call__(self, id: str):
-        obj = self.model.get(id)
-        if not obj:
-            raise HTTPException(
-                detail=f"Object with id {id} does not exist",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-        return obj
-
-blog_dependency = GetObjectOr404(blogs)
-@app.get("/blog/{id}", tags=["Blog"])
-def get_blog(blog_name: str = Depends(blog_dependency)):
-    return blog_name
-
-user_dependency = GetObjectOr404(users)
-@app.get("/user/{id}", tags=["Blog"])
-def get_user(user_name: str = Depends(user_dependency)):
-    return user_name
-
 # Create route
 @app.post("/create", tags=["CREATE"])
 def create(key: str, value: Any):
@@ -137,7 +82,7 @@ def create_dict(key: str, value: dict):
     return {"message": "Record created successfully"}
 
 # Read route
-@app.get("/read", tags=["READ"])
+@app.get("/read_one", tags=["READ"])
 async def read(key: str):
     try:
         if not r.exists(key):
@@ -165,6 +110,16 @@ async def read(key: str):
             "error": True
         }, 500
 
+# Get all key, value pairs
+@app.get("/read_all", tags=["READ"])
+def getall(allpairs: Dict = Depends(getallpairs)):
+    return allpairs
+
+# Get all that start with...
+@app.get("/read_all_startwith", tags=["READ"])
+def getall_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
+    return allpairs_startwith
+
 # Update route
 @app.put("/update", tags=["UPDATE"])
 def update(key: str, value: Any):
@@ -173,6 +128,17 @@ def update(key: str, value: Any):
         return {"message": "Key not found"}
     
     r.set(key, value)
+    
+    return {"message": "Record updated successfully"}
+
+# Update dict route
+@app.put("/update_dict", tags=["UPDATE"])
+def update(key: str, value: dict):
+    
+    if not r.exists(key):
+        return {"message": "Key not found"}
+    
+    r.hset(key, mapping=value)
     
     return {"message": "Record updated successfully"}
 
@@ -187,10 +153,7 @@ def delete(key: str):
     
     return {"message": "Record deleted successfully"}
 
-# Get all key, value pairs
-@app.get("/getall", tags=["READ"])
-def getall(allpairs: Dict = Depends(getallpairs)):
-    return allpairs
+
 
 # Delete keys that starts with certain text
 @app.delete("/delete_startswith", tags=["DELETE"])
@@ -203,8 +166,3 @@ def delete_startswith(key: str):
         r.delete(key)
         
     return {"message": "Records deleted successfully"}
-
-# Get all that start with...
-@app.get("/getall_startwith", tags=["READ"])
-def getall_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
-    return allpairs_startwith
