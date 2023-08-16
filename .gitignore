@@ -2,3 +2,4 @@ env
 .env
 .vercel
 __pycache__
+ignored: __pycache__
