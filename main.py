@@ -41,10 +41,10 @@ r.hset('blogset:1', mapping=blogs)
 #print(r.hgetall('userset:1'))
 
 # delete keys
-def delete_startswith(key: str):
-    for key in r.keys("blog*"):
-        # delete the key
-        r.delete(key)
+# def delete_startswith(key: str):
+#     for key in r.keys("blog*"):
+#         # delete the key
+#         r.delete(key)
     
 
 # print all key, value pairs
@@ -125,6 +125,14 @@ def get_user(user_name: str = Depends(user_dependency)):
 def create(key: str, value: Any):
 
     r.set(key, value)
+
+    return {"message": "Record created successfully"}
+
+# Create route for hash (dict)
+@app.post("/create_dict", tags=["CREATE"])
+def create_dict(key: str, value: dict):
+
+    r.hset(key, mapping=value)
 
     return {"message": "Record created successfully"}
 
