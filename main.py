@@ -1,98 +1,23 @@
-from typing import Any, List, Dict
+from typing import Any, Dict
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import redis
+from connections.redis_db import REDIS_CLIENT as r
 from redis import RedisError
-import json
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
-r = redis.Redis(
-    host="redis-10522.c293.eu-central-1-1.ec2.cloud.redislabs.com",
-    port=10522,
-    password=os.getenv("redis_key"),
-    decode_responses=True
-)
-
-# get all key, value pairs
-def getallpairs():
-    pairs = []
-    for key in r.keys("*"):
-        type = r.type(key)
-        if type == "string":
-            val = r.get(key)
-            pairs.append({"Key": key, "Value": val, "Type": type})
-        if type == "hash":
-            vals = r.hgetall(key)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "zset":
-            vals = r.zrange(key, 0, -1)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "list":
-            vals = r.lrange(key, 0, -1)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "set":
-            vals = r. smembers(key)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-    print(pairs)
-    return {"messages": pairs}
-
-# get all key, value pairs (startswith)
-def getallpairs_starswith(key: str):
-    keys = r.keys(f"{key}*")
-    if not keys:
-        return {"message": f"No key found that starts with {key}"}
-    pairs = []
-    for key in keys:
-        type = r.type(key)
-        if type == "string":
-            val = r.get(key)
-            pairs.append({"Key": key, "Value": val, "Type": type})
-        if type == "hash":
-            vals = r.hgetall(key)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "zset":
-            vals = r.zrange(key, 0, -1)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "list":
-            vals = r.lrange(key, 0, -1)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-        if type == "set":
-            vals = r. smembers(key)
-            pairs.append({"Key": key, "Value": vals, "Type": type})
-    print(pairs)
-    return {"messages": pairs}
+from frontend.index_html import html
+from helper_functions.helpers import getallpairs, getallpairs_starswith
 
 app = FastAPI(title="FastAPI CURD on Redis")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
-html = f"""
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>FastAPI CRUD on Redis and Vercel</title>
-        <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
-    </head>
-    <body>
-        <div class="bg-gray-200 p-4 rounded-lg shadow-lg">
-            <h1>Andi's FastAPI Test</h1>
-            <h2>Hello from FastAPI</h2>
-            <img src="/static/maneblo_logo.png" alt="maneblo" width="200" height="200">
-            <ul>
-                <li><a href="/docs">/docs</a></li>
-                <li><a href="/redoc">/redoc</a></li>
-            </ul>
-        </div>
-    </body>
-</html>
-"""
-
-#root route
-@app.get("/")
+#root route - see frontend
+@app.get("/", tags=["Frontend Landing Page"])
 async def root():
     return HTMLResponse(html)
+
+### CRUD ###
+
+## Create ##
 
 # Create route
 @app.post("/create", tags=["CREATE"])
@@ -109,6 +34,8 @@ def create_dict(key: str, value: dict):
     r.hset(key, mapping=value)
 
     return {"message": "Record created successfully"}
+
+## READ ##
 
 # Read route
 @app.get("/read_one", tags=["READ"])
@@ -149,6 +76,8 @@ def read_all(allpairs: Dict = Depends(getallpairs)):
 def read_all_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
     return allpairs_startwith
 
+## UPDATE ##
+
 # Update route
 @app.put("/update", tags=["UPDATE"])
 def update(key: str, value: Any):
@@ -170,6 +99,8 @@ def update_dict(key: str, value: dict):
     r.hset(key, mapping=value)
     
     return {"message": "Record updated successfully"}
+
+## DELETE ##
 
 # Delete route
 @app.delete("/delete", tags=["DELETE"])
