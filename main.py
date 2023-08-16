@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Dict
 from fastapi import FastAPI, Depends, HTTPException, status
 import redis
 import json
@@ -37,46 +37,45 @@ r.hset('userset:1', mapping={
 
 r.hset('blogset:1', mapping=blogs)
 
-print(r.hgetall('userset:1'))
+#print(r.hgetall('userset:1'))
 
 # delete keys
-for key in r.keys("blog*"):
-    # delete the key
-    r.delete(key)
+def delete_startswith(key: str):
+    for key in r.keys("blog*"):
+        # delete the key
+        r.delete(key)
+    
 
 # print all key, value pairs
-for key in r.keys("*"):
-    type = r.type(key)
-    if type == "string":
-        val = r.get(key)
-        print(f"Key: {key} -> Value: {val}")
-    if type == "hash":
-        vals = r.hgetall(key)
-        print(f"Key: {key} -> Value: {vals}")
-    if type == "zset":
-        vals = r.zrange(key, 0, -1)
-        print(f"Key: {key} -> Value: {vals}")
-    if type == "list":
-        vals = r.lrange(key, 0, -1)
-        print(f"Key: {key} -> Value: {vals}")
-    if type == "set":
-        vals = r. smembers(key)
-        print(f"Key: {key} -> Value: {vals}")
+def getallpairs():
+    pairs = []
+    for key in r.keys("*"):
+        type = r.type(key)
+        if type == "string":
+            val = r.get(key)
+            pairs.append({"Key": key, "Value": val, "Type": type})
+        if type == "hash":
+            vals = r.hgetall(key)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "zset":
+            vals = r.zrange(key, 0, -1)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "list":
+            vals = r.lrange(key, 0, -1)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "set":
+            vals = r. smembers(key)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+    print(pairs)
+    return {"messages": pairs}
 
 app = FastAPI(title="FastAPI CURD on Redis")
 
 class GetObjectOr404:
     def __init__(self, model) -> None:
         self.model = model
-
     def __call__(self, id: str):
-        
-        
-        
         obj = self.model.get(id)
-        
-        
-        
         if not obj:
             raise HTTPException(
                 detail=f"Object with id {id} does not exist",
@@ -96,18 +95,18 @@ def get_user(user_name: str = Depends(user_dependency)):
 
 # Create route
 @app.post("/create", tags=["CRUD"])
-def create(key: str, value: str):
-    # Set the key-value pair in Redis
+def create(key: str, value: Any):
+
     r.set(key, value)
-    
+
     return {"message": "Record created successfully"}
 
 # Read route
 @app.get("/read", tags=["CRUD"])
 def read(key: str):
-    # Get the value for the specified key from Redis
+
     value = r.get(key)
-    
+
     if value is None:
         return {"message": "Key not found"}
     
@@ -115,12 +114,11 @@ def read(key: str):
 
 # Update route
 @app.put("/update", tags=["CRUD"])
-def update(key: str, value: str):
-    # Check if the key exists in Redis
+def update(key: str, value: Any):
+    
     if not r.exists(key):
         return {"message": "Key not found"}
     
-    # Update the value for the specified key in Redis
     r.set(key, value)
     
     return {"message": "Record updated successfully"}
@@ -128,11 +126,27 @@ def update(key: str, value: str):
 # Delete route
 @app.delete("/delete", tags=["CRUD"])
 def delete(key: str):
-    # Check if the key exists in Redis
+    
     if not r.exists(key):
         return {"message": "Key not found"}
     
-    # Delete the key-value pair from Redis
     r.delete(key)
     
     return {"message": "Record deleted successfully"}
+
+# Get all key, value pairs
+@app.get("/getall", tags=["Overview"])
+def getall(allpairs: Dict = Depends(getallpairs)):
+    return allpairs
+
+# Delete keys that start with certain text
+@app.delete("/delete_startswith", tags=["Overview"])
+def delete_starswith(key: str):
+
+    # if not r.exists(key):
+    #     return {"message": "Key not found"}
+    
+    for key in r.keys(key+"*"):
+        r.delete(key)
+        
+    return {"message": "Records deleted successfully"}
