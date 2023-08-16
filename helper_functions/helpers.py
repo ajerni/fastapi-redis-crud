@@ -1,4 +1,41 @@
+from typing import Any, Dict
 from connections.redis_db import REDIS_CLIENT as r
+from redis import RedisError
+
+# get one key, value pair
+def getone(key: str):
+
+    def response(val: Any):
+        return {"message": "Record read successfully", "value": val}
+
+    try:
+        if not r.exists(key):
+            raise RedisError("KEY_NOT_FOUND")
+        
+        type = r.type(key)
+
+        if type == "string":
+            val = r.get(key)
+            return response(val)
+           
+        elif type == "hash":
+            val = r.hgetall(key)
+            return response(val)
+        elif type == "zset":
+            val = r.zrange(key, 0, -1)
+            return response(val)
+        elif type == "list":
+            val = r.lrange(key, 0, -1)
+            return response(val)
+        elif type == "set":
+            val = r.smembers(key)
+            return response(val)
+        
+    except RedisError as e:
+        return {
+            "message": f"Key not found: {e}",
+        }
+
 # get all key, value pairs
 def getallpairs():
     pairs = []

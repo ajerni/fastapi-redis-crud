@@ -3,9 +3,8 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from connections.redis_db import REDIS_CLIENT as r
-from redis import RedisError
 from frontend.index_html import html
-from helper_functions.helpers import getallpairs, getallpairs_starswith
+from helper_functions.helpers import getallpairs, getallpairs_starswith, getone
 
 app = FastAPI(title="FastAPI CURD on Redis")
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
@@ -24,7 +23,6 @@ async def root():
 def create(key: str, value: Any):
 
     r.set(key, value)
-
     return {"message": "Record created successfully"}
 
 # Create route for hash (dict)
@@ -32,39 +30,13 @@ def create(key: str, value: Any):
 def create_dict(key: str, value: dict):
 
     r.hset(key, mapping=value)
-
     return {"message": "Record created successfully"}
 
 ## READ ##
 
-# Read route
 @app.get("/read_one", tags=["READ"])
-async def read_one(key: str):
-    try:
-        if not r.exists(key):
-            raise RedisError("KEY_NOT_FOUND")
-        
-        type = r.type(key)
-        if type == "string":
-            val = r.get(key)
-            return {"message": "Record read successfully", "value": val}
-        elif type == "hash":
-            vals = r.hgetall(key)
-            return {"message": "Record read successfully", "value": vals}
-        elif type == "zset":
-            vals = r.zrange(key, 0, -1)
-            return {"message": "Record read successfully", "value": vals}
-        elif type == "list":
-            vals = r.lrange(key, 0, -1)
-            return {"message": "Record read successfully", "value": vals}
-        elif type == "set":
-            vals = r.smembers(key)
-            return {"message": "Record read successfully", "value": vals}
-    except RedisError as e:
-        return {
-            "message": f"Key not found: {e}",
-            "error": True
-        }, 500
+async def read_one(result: dict = Depends(getone)):
+    return result
 
 # Read all key, value pairs
 @app.get("/read_all", tags=["READ"])
@@ -86,7 +58,6 @@ def update(key: str, value: Any):
         return {"message": "Key not found"}
     
     r.set(key, value)
-    
     return {"message": "Record updated successfully"}
 
 # Update dict route
@@ -97,7 +68,6 @@ def update_dict(key: str, value: dict):
         return {"message": "Key not found"}
     
     r.hset(key, mapping=value)
-    
     return {"message": "Record updated successfully"}
 
 ## DELETE ##
@@ -109,8 +79,7 @@ def delete(key: str):
     if not r.exists(key):
         return {"message": "Key not found"}
     
-    r.delete(key)
-    
+    r.delete(key) 
     return {"message": "Record deleted successfully"}
 
 # Delete keys that starts with
@@ -121,6 +90,5 @@ def delete_startswith(key: str):
         return {"message": f"No key found that starts with {key}"}
     
     for key in keys:
-        r.delete(key)
-        
+        r.delete(key)     
     return {"message": "Records deleted successfully"}
