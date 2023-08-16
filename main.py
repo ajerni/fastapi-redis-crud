@@ -83,7 +83,7 @@ def create_dict(key: str, value: dict):
 
 # Read route
 @app.get("/read_one", tags=["READ"])
-async def read(key: str):
+async def read_one(key: str):
     try:
         if not r.exists(key):
             raise RedisError("KEY_NOT_FOUND")
@@ -112,12 +112,12 @@ async def read(key: str):
 
 # Get all key, value pairs
 @app.get("/read_all", tags=["READ"])
-def getall(allpairs: Dict = Depends(getallpairs)):
+def read_all(allpairs: Dict = Depends(getallpairs)):
     return allpairs
 
 # Get all that start with...
 @app.get("/read_all_startwith", tags=["READ"])
-def getall_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
+def read_all_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
     return allpairs_startwith
 
 # Update route
@@ -133,7 +133,7 @@ def update(key: str, value: Any):
 
 # Update dict route
 @app.put("/update_dict", tags=["UPDATE"])
-def update(key: str, value: dict):
+def update_dict(key: str, value: dict):
     
     if not r.exists(key):
         return {"message": "Key not found"}
@@ -152,8 +152,6 @@ def delete(key: str):
     r.delete(key)
     
     return {"message": "Record deleted successfully"}
-
-
 
 # Delete keys that starts with certain text
 @app.delete("/delete_startswith", tags=["DELETE"])
