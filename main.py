@@ -17,7 +17,7 @@ async def root():
 
 ### CRUD ###
 
-## Create ##
+## CREATE ##
 
 # Create route
 @app.post("/create", tags=["CREATE"])

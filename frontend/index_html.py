@@ -7,8 +7,7 @@ html = f"""
     </head>
     <body>
         <div class="bg-gray-200 p-4 rounded-lg shadow-lg">
-            <h1>Andi's FastAPI Test</h1>
-            <h2>Hello from FastAPI</h2>
+            <h1>Andi's FastAPI CRUD boilerplate for Redis DB access</h1>
             <img src="/static/maneblo_logo.png" alt="maneblo" width="200" height="200">
             <ul>
                 <li><a href="/docs">/docs</a></li>
