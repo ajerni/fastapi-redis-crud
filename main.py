@@ -1,6 +1,7 @@
 from typing import Any, List, Dict
 from fastapi import FastAPI, Depends, HTTPException, status
 import redis
+from redis import RedisError
 import json
 from dotenv import load_dotenv
 import os
@@ -69,6 +70,32 @@ def getallpairs():
     print(pairs)
     return {"messages": pairs}
 
+# print all key, value pairs (startswith)
+def getallpairs_starswith(key: str):
+    keys = r.keys(f"{key}*")
+    if not keys:
+        return {"message": f"No key found that starts with {key}"}
+    pairs = []
+    for key in keys:
+        type = r.type(key)
+        if type == "string":
+            val = r.get(key)
+            pairs.append({"Key": key, "Value": val, "Type": type})
+        if type == "hash":
+            vals = r.hgetall(key)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "zset":
+            vals = r.zrange(key, 0, -1)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "list":
+            vals = r.lrange(key, 0, -1)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+        if type == "set":
+            vals = r. smembers(key)
+            pairs.append({"Key": key, "Value": vals, "Type": type})
+    print(pairs)
+    return {"messages": pairs}
+
 app = FastAPI(title="FastAPI CURD on Redis")
 
 class GetObjectOr404:
@@ -94,7 +121,7 @@ def get_user(user_name: str = Depends(user_dependency)):
     return user_name
 
 # Create route
-@app.post("/create", tags=["CRUD"])
+@app.post("/create", tags=["CREATE"])
 def create(key: str, value: Any):
 
     r.set(key, value)
@@ -102,18 +129,36 @@ def create(key: str, value: Any):
     return {"message": "Record created successfully"}
 
 # Read route
-@app.get("/read", tags=["CRUD"])
-def read(key: str):
-
-    value = r.get(key)
-
-    if value is None:
-        return {"message": "Key not found"}
-    
-    return {"message": "Record read successfully", "value": value}
+@app.get("/read", tags=["READ"])
+async def read(key: str):
+    try:
+        if not r.exists(key):
+            raise RedisError("KEY_NOT_FOUND")
+        
+        type = r.type(key)
+        if type == "string":
+            val = r.get(key)
+            return {"message": "Record read successfully", "value": val}
+        elif type == "hash":
+            vals = r.hgetall(key)
+            return {"message": "Record read successfully", "value": vals}
+        elif type == "zset":
+            vals = r.zrange(key, 0, -1)
+            return {"message": "Record read successfully", "value": vals}
+        elif type == "list":
+            vals = r.lrange(key, 0, -1)
+            return {"message": "Record read successfully", "value": vals}
+        elif type == "set":
+            vals = r.smembers(key)
+            return {"message": "Record read successfully", "value": vals}
+    except RedisError as e:
+        return {
+            "message": f"Key not found: {e}",
+            "error": True
+        }, 500
 
 # Update route
-@app.put("/update", tags=["CRUD"])
+@app.put("/update", tags=["UPDATE"])
 def update(key: str, value: Any):
     
     if not r.exists(key):
@@ -124,7 +169,7 @@ def update(key: str, value: Any):
     return {"message": "Record updated successfully"}
 
 # Delete route
-@app.delete("/delete", tags=["CRUD"])
+@app.delete("/delete", tags=["DELETE"])
 def delete(key: str):
     
     if not r.exists(key):
@@ -135,18 +180,23 @@ def delete(key: str):
     return {"message": "Record deleted successfully"}
 
 # Get all key, value pairs
-@app.get("/getall", tags=["Overview"])
+@app.get("/getall", tags=["READ"])
 def getall(allpairs: Dict = Depends(getallpairs)):
     return allpairs
 
-# Delete keys that start with certain text
-@app.delete("/delete_startswith", tags=["Overview"])
-def delete_starswith(key: str):
-
-    # if not r.exists(key):
-    #     return {"message": "Key not found"}
+# Delete keys that starts with certain text
+@app.delete("/delete_startswith", tags=["DELETE"])
+def delete_startswith(key: str):
+    keys = r.keys(f"{key}*")
+    if not keys:
+        return {"message": f"No key found that starts with {key}"}
     
-    for key in r.keys(key+"*"):
+    for key in keys:
         r.delete(key)
         
     return {"message": "Records deleted successfully"}
+
+# Get all that start with...
+@app.get("/getall_startwith", tags=["READ"])
+def getall_startwith(allpairs_startwith: Dict = Depends(getallpairs_starswith)):
+    return allpairs_startwith
