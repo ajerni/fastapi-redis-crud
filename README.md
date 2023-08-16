@@ -1,13 +1,14 @@
-FastAPI CURD for Redis database
+# FastAPI CRUD boilerplate for Redis Database
 
-python -m venv env
+## How to Use
 
-source env/bin/activate
+1. Git Clone: `git clone https://github.com/ajerni/fastapi-redis-crud.git`
+2. Create Virtual Environment: `python -m venv env`
+3. Activate Virtual Environment: `source env/bin/activate`
+4. Install Dependencies: `pip install -r requirements.txt`
+5. Run Application: `uvicorn main:app --reload`
 
-run with: uvicorn main:app --reload
+## Live Demo
 
-made a requirements.txt from pip freeze before depoyment to Vercel:
-
-https://fastapi-redis-crud.vercel.app/
-
-Deployed to production. Run `vercel --prod` to overwrite later
+* requirements.txt created from `pip freeze` before deployment to Vercel: <https://fastapi-redis-crud.vercel.app/>
+* Deployed to production. Run `vercel --prod` to overwrite later.
