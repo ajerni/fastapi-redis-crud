@@ -3,11 +3,11 @@
 ## How to Use
 
 1. Git Clone: `git clone https://github.com/ajerni/fastapi-redis-crud.git`
-2. `cd fastapi-redis-crud`
+2. Move to the new directory: `cd fastapi-redis-crud`
 3. Create Virtual Environment: `python -m venv env`
 4. Activate Virtual Environment: `source env/bin/activate`
 5. Install Dependencies: `pip install -r requirements.txt`
-6. `echo "redis_key=xyz" > .env` (replace xyz with your database password)
+6. Save your Redis database password: `echo "redis_key=xyz" > .env` (replace xyz with your database password)
 7. Run Application: `uvicorn main:app --reload`
 
 ## Live Demo
