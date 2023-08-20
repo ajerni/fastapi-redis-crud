@@ -5,9 +5,24 @@ from fastapi.staticfiles import StaticFiles
 from connections.redis_db import REDIS_CLIENT as r
 from frontend.index_html import html
 from helper_functions.helpers import getallpairs, getallpairs_starswith, getone
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="FastAPI CURD on Redis")
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+
+origins = [
+    "http://localhost:5500",
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #root route - see frontend
 @app.get("/", tags=["Frontend Landing Page"])
