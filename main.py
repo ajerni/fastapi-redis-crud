@@ -14,6 +14,8 @@ origins = [
     "http://localhost:5500",
     "http://localhost",
     "http://localhost:8080",
+    "https://aetest.andierni.ch",
+    "https://quiz.andierni.ch",
 ]
 
 app.add_middleware(
