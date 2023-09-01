@@ -29,11 +29,14 @@ app.add_middleware(
 )
 
 # Start Api-Key security setup
+
+# allowed keys
 api_keys = [
     "my_api_key",
     "letmein"
 ]
 
+# the name of the header that must be provided
 api_key_header = APIKeyHeader(name="x-api-key", auto_error=False)
 
 
