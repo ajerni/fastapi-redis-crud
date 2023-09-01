@@ -37,7 +37,7 @@ api_keys = [
 ]
 
 # the name of the header that must be provided
-api_key_header = APIKeyHeader(name="redis-crud-api-key", auto_error=False)
+api_key_header = APIKeyHeader(name="REDIS_CRUD_API_KEY", auto_error=False)
 
 
 def get_api_key(
