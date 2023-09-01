@@ -52,7 +52,7 @@ def get_api_key(
 # End Api-Key security setup
 
 # protect a route like this:
-@app.get("/protected")
+@app.get("/protected", tags=["Security Example"])
 def private(api_key: str = Security(get_api_key)):
     """A private endpoint that requires a valid API key to be provided in the header."""
     return f"Private Endpoint reached sucessfully. API Key: {api_key}"
